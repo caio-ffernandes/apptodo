@@ -29,26 +29,20 @@ class _ElementScreenState extends State<ElementScreen> {
     if (tasksString != null) {
       List<dynamic> taskList = jsonDecode(tasksString);
       setState(() {
-        tasks = taskList.map((taskData) => Task(
-          title: taskData['title'],
-          isDone: taskData['isDone']
-        )).toList();
+        tasks = taskList.map((taskData) => Task.fromMap(taskData)).toList();
       });
     }
   }
 
   void _saveTasks() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    List<Map<String, dynamic>> taskList = tasks.map((task) => {
-      'title': task.title,
-      'isDone': task.isDone
-    }).toList();
+    List<Map<String, dynamic>> taskList = tasks.map((task) => task.toMap()).toList();
     prefs.setString('tasks_${widget.title}', jsonEncode(taskList));
   }
 
-  void _addTask(String taskTitle) {
+  void _addTask(String taskTitle, String taskDescription) {
     setState(() {
-      tasks.add(Task(title: taskTitle));
+      tasks.add(Task(title: taskTitle, description: taskDescription));
       _saveTasks();
     });
   }
@@ -65,6 +59,48 @@ class _ElementScreenState extends State<ElementScreen> {
       tasks.remove(task);
       _saveTasks();
     });
+  }
+
+  void _showAddTaskDialog() {
+    String newTaskTitle = '';
+    String newTaskDescription = '';
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Nova Tarefa'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              TextField(
+                decoration: InputDecoration(labelText: 'Título'),
+                onChanged: (value) {
+                  newTaskTitle = value;
+                },
+              ),
+              TextField(
+                decoration: InputDecoration(labelText: 'Descrição'),
+                onChanged: (value) {
+                  newTaskDescription = value;
+                },
+              ),
+            ],
+          ),
+          actions: <Widget>[
+            ElevatedButton(
+              child: Text('Adicionar'),
+              onPressed: () {
+                if (newTaskTitle.isNotEmpty && newTaskDescription.isNotEmpty) {
+                  _addTask(newTaskTitle, newTaskDescription);
+                  Navigator.of(context).pop();
+                }
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -88,15 +124,9 @@ class _ElementScreenState extends State<ElementScreen> {
             child: Row(
               children: [
                 Expanded(
-                  child: TextField(
-                    decoration: InputDecoration(
-                      labelText: 'Nova Tarefa',
-                    ),
-                    onSubmitted: (value) {
-                      if (value.isNotEmpty) {
-                        _addTask(value);
-                      }
-                    },
+                  child: ElevatedButton(
+                    child: Text('Adicionar Tarefa'),
+                    onPressed: _showAddTaskDialog,
                   ),
                 ),
               ],

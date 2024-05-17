@@ -21,6 +21,7 @@ class TaskList extends StatelessWidget {
               decoration: task.isDone ? TextDecoration.lineThrough : null,
             ),
           ),
+          subtitle: Text(task.description),
           leading: Checkbox(
             value: task.isDone,
             onChanged: (value) {
