@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:apptodo/models/task.dart';
 import 'package:apptodo/widgets/task_list.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 
 class ElementScreen extends StatefulWidget {
   final String title;
@@ -13,23 +15,55 @@ class ElementScreen extends StatefulWidget {
 }
 
 class _ElementScreenState extends State<ElementScreen> {
-  final List<Task> tasks = [];
+  List<Task> tasks = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadTasks();
+  }
+
+  void _loadTasks() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? tasksString = prefs.getString('tasks_${widget.title}');
+    if (tasksString != null) {
+      List<dynamic> taskList = jsonDecode(tasksString);
+      setState(() {
+        tasks = taskList.map((taskData) => Task(
+          title: taskData['title'],
+          isDone: taskData['isDone']
+        )).toList();
+      });
+    }
+  }
+
+  void _saveTasks() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    List<Map<String, dynamic>> taskList = tasks.map((task) => {
+      'title': task.title,
+      'isDone': task.isDone
+    }).toList();
+    prefs.setString('tasks_${widget.title}', jsonEncode(taskList));
+  }
 
   void _addTask(String taskTitle) {
     setState(() {
       tasks.add(Task(title: taskTitle));
+      _saveTasks();
     });
   }
 
   void _toggleTask(Task task) {
     setState(() {
       task.isDone = !task.isDone;
+      _saveTasks();
     });
   }
 
   void _removeTask(Task task) {
     setState(() {
       tasks.remove(task);
+      _saveTasks();
     });
   }
 
